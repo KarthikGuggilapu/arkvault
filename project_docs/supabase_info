@@ -1,0 +1,24 @@
+**Supabase ---------------**
+
+**Project Name** : ArkVault_V2
+**Database Password** : ArkVault#2025
+
+**Project ID** : tnptwkmxylriukggyjyl
+**Url** : https://tnptwkmxylriukggyjyl.supabase.co
+**Anon Key** : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucHR3a214eWxyaXVrZ2d5anlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzMjUwMDcsImV4cCI6MjA2NTkwMTAwN30.dwwrRFM4DZEawJfS-3eigrOqNBUTbqowde9558f4RzU
+**service_role** : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucHR3a214eWxyaXVrZ2d5anlsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDMyNTAwNywiZXhwIjoyMDY1OTAxMDA3fQ.PnXJghuoEXbqRUU8KIKBGqqnFOdwo0DGxsWdADVj3-8
+
+**JWT Secret** : 9/PEvCunyeGQ4jS7KszpojK96eUfksRjfy3z1C4xJSUOUmN0M2+gZAV2D3bQsMkbyfyzGNWlVeXRN9UqPj8KgA==
+
+
+**Postgre Connection---------**
+
+**Direct connection**
+***Ideal for applications with persistent, long-lived connections, such as those running on virtual machines or   long-standing containers.***
+
+postgresql://postgres:[YOUR-PASSWORD]@db.tnptwkmxylriukggyjyl.supabase.co:5432/postgres
+
+**Transaction pooler (Shared Pooler)**
+***Ideal for stateless applications like serverless functions where each interaction with Postgres is brief and isolated.***
+*/
+postgresql://postgres.tnptwkmxylriukggyjyl:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres

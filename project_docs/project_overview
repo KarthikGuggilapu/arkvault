@@ -1,0 +1,115 @@
+## **ArkVault - Project Overview**
+
+**ArkVault** is a sophisticated password management application built with Next.js 15, TypeScript, and Tailwind CSS. It's designed to provide users with a secure, feature-rich vault for managing their digital credentials with military-grade encryption.
+
+### **🏗️ Technology Stack**
+- **Frontend**: Next.js 15 with React 19, TypeScript
+- **Styling**: Tailwind CSS with custom design system
+- **UI Components**: Radix UI primitives with shadcn/ui
+- **Backend**: Supabase (PostgreSQL database)
+- **Authentication**: Supabase Auth (configured but not fully implemented)
+- **Icons**: Lucide React
+- **State Management**: React hooks (useState, useTheme)
+- **Notifications**: Sonner toast system
+
+### **🎯 Core Features & Functionality**
+
+#### **1. Authentication System**
+- **Login/Signup Interface**: Modern, animated authentication page with:
+  - Email/password authentication
+  - 2FA readiness indicator
+  - Password visibility toggle
+  - Gradient UI with security-themed animations
+  - Form validation and loading states
+
+#### **2. Dashboard & Password Management**
+- **Main Vault**: Central dashboard displaying all stored passwords
+- **Password Cards**: Individual cards showing:
+  - Service name and username
+  - Masked passwords with show/hide toggle
+  - Category badges (Personal, Work, Banking, Entertainment, Social)
+  - Last updated timestamps
+  - Expiration warnings
+  - Quick actions (copy, share, more options)
+
+#### **3. Password Generator**
+- **Advanced Generator**: Sophisticated password creation tool with:
+  - Customizable length (6-50 characters)
+  - Character set options (uppercase, lowercase, numbers, symbols)
+  - Exclusion options (similar characters, ambiguous characters)
+  - Custom character inclusion/exclusion
+  - Preset templates (High Security, Medium Security, Basic, PIN Code)
+  - Real-time strength calculation and visualization
+  - Password history tracking
+  - One-click copy functionality
+
+#### **4. Navigation & Organization**
+- **Sidebar Navigation**: Clean navigation with:
+  - Vault (main dashboard)
+  - Password Generator
+  - Shared passwords (with count indicators)
+  - Notifications
+  - Activity timeline
+  - Settings
+- **Category Filtering**: Filter passwords by category
+- **Search Functionality**: Global search across all passwords
+- **Vault Health**: Visual indicators of password strength distribution
+
+#### **5. Additional Features**
+- **Dark/Light Theme**: Toggle between themes
+- **Activity Timeline**: Track vault usage and changes
+- **Notifications**: Alert system for expired passwords
+- **Responsive Design**: Mobile-friendly interface
+- **Modern UI**: Glassmorphism effects, gradients, and smooth animations
+
+### **🔄 Application Flow**
+
+1. **Entry Point**: Users land on the authentication page (`/`)
+2. **Authentication**: Login/signup with email and password
+3. **Dashboard**: Redirected to main vault dashboard (`/dashboard`)
+4. **Password Management**: 
+   - View all stored passwords
+   - Add new passwords via floating action button
+   - Search and filter passwords
+   - Copy passwords to clipboard
+5. **Password Generation**: Access dedicated generator (`/dashboard/generator`)
+6. **Additional Features**: Navigate to shared passwords, notifications, activity, and settings
+
+### **🔐 Security Features**
+- **Password Masking**: Default hidden passwords with toggle
+- **Strong Password Generation**: Configurable complexity options
+- **Expiration Tracking**: Visual indicators for expired passwords
+- **Category Organization**: Logical grouping of credentials
+- **Secure Copy**: Clipboard integration with notifications
+- **2FA Ready**: Infrastructure for two-factor authentication
+
+### **🎨 Design Philosophy**
+- **Modern Aesthetics**: Clean, professional interface with security-themed design
+- **Accessibility**: Proper contrast ratios and keyboard navigation
+- **User Experience**: Intuitive navigation and clear visual hierarchy
+- **Responsive**: Works seamlessly across desktop and mobile devices
+- **Performance**: Optimized with Next.js 15 features
+
+### **📊 Data Structure**
+The application manages password entries with the following structure:
+```typescript
+interface PasswordEntry {
+  id: number
+  title: string
+  username: string
+  password: string
+  category: string
+  lastUpdated: string
+  isExpired: boolean
+  url: string
+}
+```
+
+### **🚀 Development Status**
+- **Frontend**: Fully implemented with modern React patterns
+- **UI/UX**: Complete with responsive design and animations
+- **Backend**: Supabase configured but integration pending
+- **Authentication**: UI ready, backend integration needed
+- **Data Persistence**: Mock data currently, ready for database integration
+
+**ArkVault** represents a modern, feature-complete password management solution that prioritizes both security and user experience, with a beautiful interface and comprehensive functionality for managing digital credentials safely.
