@@ -97,9 +97,9 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
   }
 
   const handleShare = async (entry: PasswordEntry) => {
-    console.log("Current user in handleShare:", user);
-    window.alert("handleShare called");
-    debugger
+    // console.log("Current user in handleShare:", user);
+    // window.alert("handleShare called");
+    // debugger
     if (!user) {
       toast.error("You must be logged in to share a password.");
       return;
@@ -119,13 +119,37 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
 
         Please keep this information secure.
 
-        Team,
-        ArkVault
+        Shared by: ${user.email}
         `;
 
       if (!user) { toast.error("Not logged in"); return; }
       const userEmail = user.email;
       const userId = user.id;
+
+    // Log the share activity before sending to API
+    try {
+      const { data: activityData, error: activityError } = await supabase.from("user_activity").insert([
+        {
+          user_id: userId,
+          activity_type: "password_shared",
+          title: `Shared password '${entry.title}' with ${recipient}`,
+          description: `Password shared via email to ${recipient}`,
+          icon: "Share",
+          color: "text-blue-500",
+          created_at: new Date().toISOString(),
+        },
+      ]).select();
+
+      if (activityError) {
+        console.error("Failed to log activity:", activityError);
+        toast.error("Failed to log activity: " + activityError.message);
+      } else {
+        console.log("Activity logged successfully:", activityData);
+      }
+    } catch (error) {
+      console.error("Exception while logging activity:", error);
+    }
+
     const res = await fetch("/api/share-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -251,6 +275,7 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
         open={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         entry={entryToShare}
+        user={user}
       />
     </Card>
   )

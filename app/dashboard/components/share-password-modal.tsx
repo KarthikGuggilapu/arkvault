@@ -10,40 +10,40 @@ interface SharePasswordModalProps {
   open: boolean;
   onClose: () => void;
   entry: {
+    id: string;
     title: string;
     username: string;
     password: string;
     url: string;
+    category: string;
+    notes?: string;
   } | null;
+  user: any;
 }
 
-export function SharePasswordModal({ open, onClose, entry }: SharePasswordModalProps) {
+export function SharePasswordModal({ open, onClose, entry, user }: SharePasswordModalProps) {
   const [recipient, setRecipient] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
 
   const handleSend = async () => {
-    if (!recipient || !entry) return;
+    if (!recipient || !entry || !user) {
+      toast.error("Missing required information to share.");
+      return;
+    }
     setStatus("sending");
 
     const subject = `Sharing a password with you: ${entry.title}`;
-    const text = `Hi,
-
-I'm sharing a password with you.
-
-Website: ${entry.url || "N/A"}
-Username: ${entry.username}
-Password: ${entry.password}
-
-Please keep this information secure.
-
-Best,
-Your Name
-`;
 
     const res = await fetch("/api/share-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: recipient, subject, text }),
+      body: JSON.stringify({
+        to: recipient,
+        subject,
+        entry,
+        shared_by_email: user.email,
+        shared_by_user_id: user.id,
+      }),
     });
 
     if (res.ok) {
@@ -55,7 +55,7 @@ Your Name
       }, 1500);
     } else {
       setStatus("error");
-      toast.error("Failed to send email.");
+      toast.error("Failed to share password. Please try again.");
       setTimeout(() => setStatus("idle"), 1500);
     }
   };

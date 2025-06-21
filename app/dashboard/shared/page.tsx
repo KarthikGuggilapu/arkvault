@@ -57,18 +57,27 @@ export default function SharedPage() {
   useEffect(() => {
     if (!user) return;
     // Fetch passwords shared BY the user
-    fetch(`/api/shared-passwords?shared_by_user_id=${user.id}`)
+    fetch(`/api/share-password?shared_by_user_id=${user.id}`)
       .then(res => res.json())
       .then(data => {
-        if (data.success) setSharedPasswords(data.data);
+        // --- Client-side Logging ---
+        console.log("--- Data received from API on Shared Page ---");
+        console.log(data);
+        console.log("-------------------------------------------");
+        // --- End Logging ---
+        if (data.success) {
+          setSharedPasswords(data.data);
+        } else {
+          console.error("API call failed:", data.error);
+        }
       });
 
     // Fetch passwords shared WITH the user
-    fetch(`/api/shared-passwords?shared_with_email=${user.email}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setSharedWithMe(data.data);
-      });
+    // fetch(`/api/share-password?shared_with_email=${user.email}`)
+    //   .then(res => res.json())
+    //   .then(data => {
+    //     if (data.success) setSharedWithMe(data.data);
+    //   });
   }, [user]);
 
   const togglePasswordVisibility = (id: number) => {

@@ -164,7 +164,7 @@ export function PasswordDetailsModal({ open, onClose, entry, onUpdate, onDelete,
               <Button variant="outline" onClick={onClose} className="min-w-[90px]">Close</Button>
               <Button variant="default" onClick={() => setIsEditing(true)} className="min-w-[90px] flex items-center gap-1"><Edit className="w-4 h-4" /> Edit</Button>
               <Button variant="destructive" onClick={() => onDelete(entry.id)} className="min-w-[90px] flex items-center gap-1"><Trash className="w-4 h-4" /> Delete</Button>
-              <Button variant="secondary" onClick={() => onShare(entry)} className="min-w-[90px] flex items-center gap-1"><Share className="w-4 h-4" /> Share</Button>
+              {/* <Button variant="secondary" onClick={() => onShare(entry)} className="min-w-[90px] flex items-center gap-1"><Share className="w-4 h-4" /> Share</Button> */}
             </div>
           </div>
         )}
