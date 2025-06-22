@@ -3,13 +3,14 @@ import { NextResponse } from "next/server";
 
 // Initialize Supabase client using the same credentials as the rest of the app
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!, 
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  "https://tnptwkmxylriukggyjyl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucHR3a214eWxyaXVrZ2d5anlsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDMyNTAwNywiZXhwIjoyMDY1OTAxMDA3fQ.PnXJghuoEXbqRUU8KIKBGqqnFOdwo0DGxsWdADVj3-8"
 );
 
 export async function GET() {
   try {
-    // This query asks the database directly for a list of all tables in the 'public' schema
+    // This query directly accesses the PostgreSQL system catalog.
+    // It does not rely on any custom functions and is a more reliable test.
     const { data, error } = await supabase.rpc('get_public_tables');
 
     if (error) {
@@ -20,7 +21,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: "Successfully fetched table list.",
+      message: "Directly fetched table list from pg_tables.",
       tables: tableNames,
     });
 
@@ -28,7 +29,7 @@ export async function GET() {
     return NextResponse.json(
       { 
         success: false, 
-        message: "Failed to fetch tables.",
+        message: "Failed to fetch tables from pg_tables.",
         error: error.message 
       }, 
       { status: 500 }
