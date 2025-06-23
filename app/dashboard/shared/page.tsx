@@ -139,18 +139,25 @@ export default function SharedPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="flex">
-          <Sidebar user={user} />
-          <div className="flex-1 flex flex-col">
-            <TopNavigation
-              user={user}
-              profile={profile}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              expiredCount={expiredCount}
-            />
-
-            <div className="flex-1 p-6">
+        <div className="flex h-screen overflow-hidden">
+          {/* Sidebar: fixed */}
+          <div className="fixed left-0 top-0 h-screen z-30">
+            <Sidebar user={user} />
+          </div>
+          {/* Main Content Wrapper: margin-left for sidebar width */}
+          <div className="flex-1 flex flex-col ml-64 h-screen">
+            {/* TopNavigation: sticky */}
+            <div className="sticky top-0 z-20">
+              <TopNavigation
+                user={user}
+                profile={profile}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                expiredCount={expiredCount}
+              />
+            </div>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
               <div className="max-w-6xl mx-auto space-y-6">
                 {/* Header Section */}
                 <div className="flex items-center justify-between">

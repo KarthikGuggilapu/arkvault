@@ -151,19 +151,25 @@ export default function DashboardClient() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="flex">
-        <Sidebar user={user} />
-
-        <div className="flex-1 flex flex-col">
-          <TopNavigation
-            user={user}
-            profile={profile}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            expiredCount={expiredCount}
-          />
-
-          <div className="flex-1 p-6">
+      <div className="flex h-screen overflow-hidden">
+        {/* Sidebar: fixed */}
+        <div className="fixed left-0 top-0 h-screen z-30">
+          <Sidebar user={user} />
+        </div>
+        {/* Main Content Wrapper: margin-left for sidebar width */}
+        <div className="flex-1 flex flex-col ml-64 h-screen">
+          {/* TopNavigation: sticky */}
+          <div className="sticky top-0 z-20">
+            <TopNavigation
+              user={user}
+              profile={profile}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              expiredCount={expiredCount}
+            />
+          </div>
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Main Content */}
               <div className="lg:col-span-3 space-y-6">
@@ -261,12 +267,11 @@ export default function DashboardClient() {
       {/* Floating Add Button */}
       <Button
         onClick={() => setIsAddModalOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 z-40"
       >
         <Plus className="w-6 h-6" />
       </Button>
 
-    
     </div>
   )
 } 
