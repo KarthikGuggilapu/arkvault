@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { supabase } from '@/lib/supabase'
+import { encrypt } from '@/lib/utils'
 
 interface AddPasswordModalProps {
   isOpen: boolean
@@ -95,10 +96,11 @@ export function AddPasswordModal({ isOpen, onClose, onPasswordAdded }: AddPasswo
     }
 
     const category = formData.category || "Personal"
+    const encryptedPassword = encrypt(formData.password)
 
     const { data, error } = await supabase
       .from('passwords')
-      .insert([{ ...formData, category, user_id: user.id }])
+      .insert([{ ...formData, password: encryptedPassword, category, user_id: user.id }])
       .select()
       .single()
 

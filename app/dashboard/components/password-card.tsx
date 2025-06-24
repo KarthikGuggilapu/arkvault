@@ -15,6 +15,7 @@ import {
 import { PasswordDetailsModal } from "@/components/password-details-modal"
 import { SharePasswordModal } from "./share-password-modal"
 import { supabase } from "@/lib/supabase"
+import { decrypt } from "@/lib/utils"
 
 interface PasswordEntry {
   id: string
@@ -45,6 +46,8 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
 
   // console.log("Entry : ", entry);
   // console.log("PasswordCard received user :", user);
+
+  const decryptedPassword = decrypt(entry.password)
 
   const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text)
@@ -194,7 +197,7 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
             <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-2 font-mono text-sm">
-              {showPassword ? entry.password : "••••••••••••"}
+              {showPassword ? decryptedPassword : "••••••••••••"}
             </div>
             <Button
               variant="ghost"
@@ -219,7 +222,7 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleCopy(entry.password, "Password")}
+                onClick={() => handleCopy(decryptedPassword, "Password")}
                 className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               >
                 <Copy className="w-4 h-4" />
