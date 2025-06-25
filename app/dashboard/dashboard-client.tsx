@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Plus, Shield, LogOut } from "lucide-react"
+import { Plus, Shield, LogOut, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Sidebar } from "./components/sidebar"
@@ -13,6 +13,7 @@ import { ActivityTimeline } from "./components/activity-timeline"
 import { TopNavigation } from "./components/top-navigation"
 import { User } from "@supabase/supabase-js"
 import { toast } from 'sonner'
+import { decrypt } from '@/lib/utils'
 
 type PasswordEntry = {
   id: string
@@ -26,6 +27,7 @@ type PasswordEntry = {
   lastUpdated?: string
   updated_at: string
   is_expired: boolean
+  isDuplicate?: boolean
   // ...other fields
 };
 
@@ -81,14 +83,34 @@ export default function DashboardClient() {
       if (error) {
         toast.error('Failed to fetch passwords')
       } else {
+        const passwordCounts: Record<string, number> = {}
+        data.forEach(entry => {
+          try {
+            const decryptedPassword = decrypt(entry.password)
+            passwordCounts[decryptedPassword] = (passwordCounts[decryptedPassword] || 0) + 1
+          } catch (e) {
+            console.error(`Could not decrypt password for entry ${entry.id}`)
+          }
+        })
+
         setPasswordEntries(
-          data.map((entry) => ({
-            ...entry,
-            isExpired: entry.is_expired ?? false,
-            lastUpdated: entry.last_updated ?? "",
-            updated_at: entry.updated_at,
-            is_expired: entry.is_expired,
-          }))
+          data.map((entry) => {
+            let isDuplicate = false
+            try {
+              const decryptedPassword = decrypt(entry.password)
+              isDuplicate = passwordCounts[decryptedPassword] > 1
+            } catch (e) {
+              // already handled
+            }
+            return {
+              ...entry,
+              isExpired: entry.is_expired ?? false,
+              lastUpdated: entry.last_updated ?? "",
+              updated_at: entry.updated_at,
+              is_expired: entry.is_expired,
+              isDuplicate,
+            }
+          })
         )
       }
       setLoading(false)
@@ -129,6 +151,7 @@ export default function DashboardClient() {
   })
 
   const expiredCount = passwordEntries.filter((entry) => entry.isExpired).length
+  const duplicateCount = passwordEntries.filter((entry) => entry.isDuplicate).length
 
   // Get user's first name from email
   const getUserName = () => {
@@ -183,6 +206,20 @@ export default function DashboardClient() {
                     <Shield className="w-16 h-16 text-white/20" />
                   </div>
                 </div>
+
+                {duplicateCount > 0 && (
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 text-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h1 className="text-xl font-bold mb-2">Security Warning</h1>
+                        <p className="text-orange-100">
+                          You have {duplicateCount} duplicate passwords. Consider changing them to improve security.
+                        </p>
+                      </div>
+                      <AlertTriangle className="w-12 h-12 text-white/20" />
+                    </div>
+                  </div>
+                )}
 
                 {/* Category Filters */}
                 <div className="flex flex-wrap gap-2">

@@ -17,6 +17,8 @@ import { User as SupabaseUser } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
 import { Sidebar } from "../components/sidebar"
 import { TopNavigation } from "../components/top-navigation"
+import { Switch } from "@/components/ui/switch"
+import { encrypt, decrypt } from "@/lib/utils"
 
 export default function ProfileClient() {
   const router = useRouter()
@@ -36,8 +38,13 @@ export default function ProfileClient() {
   const [profile, setProfile] = useState<any>(null)
 
   // Mailer config state
-  const [mailerEmail, setMailerEmail] = useState("");
-  const [mailerPassword, setMailerPassword] = useState("");
+  const [mailerConfig, setMailerConfig] = useState({
+    host: "",
+    port: 587,
+    secure: true,
+    email: "",
+    password: "",
+  });
   const [mailerLoading, setMailerLoading] = useState(false);
 
   useEffect(() => {
@@ -52,6 +59,7 @@ export default function ProfileClient() {
           .eq('id', user.id)
           .single()
         profileData = data || {}
+        fetchMailerConfig(user.id);
       }
       setProfile(profileData)
       setFormData({
@@ -68,16 +76,18 @@ export default function ProfileClient() {
   }, [])
 
   // Fetch mailer config on mount
-  useEffect(() => {
-    const fetchMailerConfig = async () => {
-      const { data } = await supabase.from("mailer_configuration").select("email, password").limit(1).single();
-      if (data) {
-        setMailerEmail(data.email || "");
-        setMailerPassword(data.password || "");
-      }
-    };
-    fetchMailerConfig();
-  }, []);
+  const fetchMailerConfig = async (userId: string) => {
+    const { data } = await supabase.from("mailer_configuration").select("*").eq('user_id', userId).limit(1).single();
+    if (data) {
+      setMailerConfig({
+        host: data.host || "",
+        port: data.port || 587,
+        secure: data.secure === true,
+        email: data.email || "",
+        password: data.password ? decrypt(data.password) : "",
+      });
+    }
+  };
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
@@ -201,13 +211,20 @@ export default function ProfileClient() {
   }
 
   const handleSaveMailer = async () => {
+    if (!user) {
+      toast.error("You must be logged in.");
+      return;
+    }
     setMailerLoading(true);
     try {
       const { error } = await supabase.from("mailer_configuration").upsert({
         user_id: user.id,
-        email: mailerEmail,
-        password: mailerPassword,
-      });
+        host: mailerConfig.host,
+        port: mailerConfig.port,
+        secure: mailerConfig.secure,
+        email: mailerConfig.email,
+        password: encrypt(mailerConfig.password),
+      }, { onConflict: 'user_id' });
       if (error) throw error;
       toast.success("Mailer configuration saved!");
     } catch (error) {
@@ -227,17 +244,21 @@ export default function ProfileClient() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="flex">
-        <Sidebar user={user} />
-        <div className="flex-1 flex flex-col">
-          <TopNavigation
-            user={user}
-            profile={profile}
-            searchQuery={""}
-            onSearchChange={() => {}}
-            expiredCount={0}
-          />
-          <div className="flex-1 p-6">
+      <div className="flex h-screen overflow-hidden">
+        <div className="fixed left-0 top-0 h-screen z-30">
+          <Sidebar user={user} />
+        </div>
+        <div className="flex-1 flex flex-col ml-64 h-screen">
+          <div className="sticky top-0 z-20">
+            <TopNavigation
+              user={user}
+              profile={profile}
+              searchQuery={""}
+              onSearchChange={() => {}}
+              expiredCount={0}
+            />
+          </div>
+          <div className="flex-1 p-6 overflow-y-auto">
             <div className="container mx-auto px-4 py-8">
               {/* Header */}
               <div className="flex items-center space-x-4 mb-8">
@@ -474,12 +495,40 @@ export default function ProfileClient() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
+                        <Label htmlFor="mailer_host">SMTP Host</Label>
+                        <Input
+                          id="mailer_host"
+                          value={mailerConfig.host}
+                          onChange={e => setMailerConfig(prev => ({...prev, host: e.target.value}))}
+                          placeholder="e.g., smtp.gmail.com"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="mailer_port">SMTP Port</Label>
+                          <Input
+                            id="mailer_port"
+                            type="number"
+                            value={mailerConfig.port}
+                            onChange={e => setMailerConfig(prev => ({...prev, port: parseInt(e.target.value)}))}
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2 pt-8">
+                          <Switch
+                            id="mailer_secure"
+                            checked={mailerConfig.secure}
+                            onCheckedChange={checked => setMailerConfig(prev => ({...prev, secure: checked}))}
+                          />
+                           <Label htmlFor="mailer_secure">Use TLS/SSL</Label>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="mailer_email">Mailer Email</Label>
                         <Input
                           id="mailer_email"
                           type="email"
-                          value={mailerEmail}
-                          onChange={e => setMailerEmail(e.target.value)}
+                          value={mailerConfig.email}
+                          onChange={e => setMailerConfig(prev => ({...prev, email: e.target.value}))}
                           placeholder="Enter mailer email"
                         />
                       </div>
@@ -488,8 +537,8 @@ export default function ProfileClient() {
                         <Input
                           id="mailer_password"
                           type="password"
-                          value={mailerPassword}
-                          onChange={e => setMailerPassword(e.target.value)}
+                          value={mailerConfig.password}
+                          onChange={e => setMailerConfig(prev => ({...prev, password: e.target.value}))}
                           placeholder="Enter mailer password"
                         />
                       </div>

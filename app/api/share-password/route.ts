@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
 import fs from 'fs';
 import path from 'path';
+import { decrypt } from "@/lib/utils";
 
 // Helper function to read the email template
 function getEmailHtml(templatePath: string, replacements: Record<string, string>): string {
@@ -25,13 +26,24 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export async function POST(req: NextRequest) {
   const { to, subject, entry, shared_by_email, shared_by_user_id } = await req.json();
 
+  // Fetch mailer configuration for the user
+  const { data: mailerConfig, error: configError } = await supabase
+    .from('mailer_configuration')
+    .select('*')
+    .eq('user_id', shared_by_user_id)
+    .single();
+
+  if (configError || !mailerConfig) {
+    return NextResponse.json({ success: false, error: "Mailer configuration not found." }, { status: 500 });
+  }
+
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    host: mailerConfig.host,
+    port: mailerConfig.port,
+    secure: mailerConfig.secure,
     auth: {
-      user: "webservice2630@gmail.com",
-      pass: "xilrrdnanpmelsgs",
+      user: mailerConfig.email,
+      pass: decrypt(mailerConfig.password),
     },
   });
 
@@ -42,40 +54,36 @@ export async function POST(req: NextRequest) {
       website_url: entry.url || '#',
       website_display: entry.url ? entry.url.replace(/^(https?:\/\/)/, '') : 'N/A',
       username: entry.username,
-      password: entry.password,
+      password: decrypt(entry.password),
     });
     
     await transporter.sendMail({
-      from: '"ArkVault" <webservice2630@gmail.com>',
+      from: `"${shared_by_email}" <${mailerConfig.email}>`,
       to,
       subject,
       html: emailHtml,
     });
-
-    if (entry && to && shared_by_email && shared_by_user_id) {
-      const ip_address = req.headers.get('x-forwarded-for') ?? 'unknown';
-      const device = req.headers.get('user-agent') ?? 'unknown';
-
+    
+    // Log the share event in the database
+    if (to && shared_by_email && shared_by_user_id) {
       await supabase.from("shared_passwords").insert([
         {
-          password_id: entry.id, password_title: entry.title, password_username: entry.username,
-          password_url: entry.url, password_category: entry.category, password_notes: entry.notes,
-          shared_with_email: to, shared_by_email, shared_by_user_id, sent_at: new Date().toISOString(),
-        },
-      ]);
-
-      await supabase.from("user_activity").insert([
-        {
-          user_id: shared_by_user_id, activity_type: "password_shared", title: `Shared password '${entry.title}'`,
-          description: `Shared password with ${to}`, icon: "Share", color: "text-blue-500",
-          created_at: new Date().toISOString(), ip_address, device, location: 'Unknown',
-          severity: 'low', resolved: true
+          password_id: entry.id,
+          password_title: entry.title,
+          password_username: entry.username,
+          password_url: entry.url,
+          password_category: entry.category,
+          password_notes: entry.notes || null,
+          shared_with_email: to,
+          shared_by_email,
+          shared_by_user_id,
+          sent_at: new Date().toISOString(),
         },
       ]);
     }
+    
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('--- SHARE PASSWORD FAILED ---', error);
     return NextResponse.json({ success: false, error: (error as any).message }, { status: 500 });
   }
 }

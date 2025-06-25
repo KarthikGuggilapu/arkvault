@@ -13,6 +13,7 @@ import { signUp, signIn } from "./actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { supabase } from '@/lib/supabase'
+import Link from "next/link"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -176,6 +177,14 @@ export default function LoginPage() {
                   </Button>
                 </div>
                 {errors.password && <p className="text-red-400 text-sm">{errors.password}</p>}
+              </div>
+
+              <div className="text-right">
+                <Link href="/auth/reset-password">
+                  <span className="text-sm text-blue-400 hover:text-blue-300 cursor-pointer">
+                    Forgot Password?
+                  </span>
+                </Link>
               </div>
 
               <Button

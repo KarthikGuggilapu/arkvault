@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Eye, EyeOff, Shield, Lock, ArrowLeft } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Eye, EyeOff, Shield, Lock, ArrowLeft, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,19 +9,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
 
 export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isEmailSent, setIsEmailSent] = useState(false)
   const [formData, setFormData] = useState({
+    email: "",
     password: "",
     confirmPassword: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const router = useRouter()
 
-  const validateForm = () => {
+  useEffect(() => {
+    const signOut = async () => {
+      await supabase.auth.signOut()
+    }
+    signOut()
+  }, [])
+
+  const validateEmail = () => {
+    const newErrors: Record<string, string> = {}
+    if (!formData.email) {
+      newErrors.email = "Email is required"
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email is invalid"
+    }
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const validatePasswords = () => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.password) {
@@ -40,19 +61,39 @@ export default function ResetPasswordPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleResetPassword = async () => {
-    if (!validateForm()) return
-
+  const handleSendResetEmail = async () => {
+    if (!validateEmail()) return
     setIsLoading(true)
     try {
-      // Mock password reset - no backend integration
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.success('Password updated successfully! (mock)')
-      router.push('/dashboard')
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      })
+      if (error) {
+        toast.error(error.message)
+      } else {
+        toast.success("Password reset email sent! Check your inbox.")
+        setIsEmailSent(true)
+      }
     } catch (error) {
-      console.error("Password reset error:", error)
-      toast.error(error instanceof Error ? error.message : 'Failed to update password')
+      toast.error(error instanceof Error ? error.message : "Failed to send reset email")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleUpdatePassword = async () => {
+    if (!validatePasswords()) return
+    setIsLoading(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: formData.password })
+      if (error) {
+        toast.error(error.message)
+      } else {
+        toast.success("Password updated successfully!")
+        router.push("/dashboard")
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update password")
     } finally {
       setIsLoading(false)
     }
@@ -81,84 +122,116 @@ export default function ResetPasswordPage() {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Reset Password
+              {isEmailSent ? "Create New Password" : "Reset Password"}
             </CardTitle>
           </div>
           <CardDescription className="text-slate-400">
-            Create a new secure password for your account
+            {isEmailSent
+              ? "Enter your new secure password below."
+              : "Enter your email to receive a password reset link."}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-slate-300">
-              New Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter new password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className={`bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pr-10 ${
-                  errors.password ? "border-red-500" : ""
-                }`}
-              />
+          {!isEmailSent ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-slate-300">
+                  Email Address
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className={`bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pl-10 ${
+                      errors.email ? "border-red-500" : ""
+                    }`}
+                  />
+                </div>
+                {errors.email && <p className="text-red-400 text-sm">{errors.email}</p>}
+              </div>
               <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={handleSendResetEmail}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {isLoading ? "Sending..." : "Send Reset Link"}
               </Button>
-            </div>
-            {errors.password && <p className="text-red-400 text-sm">{errors.password}</p>}
-          </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-slate-300">
+                  New Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter new password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className={`bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pr-10 ${
+                      errors.password ? "border-red-500" : ""
+                    }`}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                {errors.password && <p className="text-red-400 text-sm">{errors.password}</p>}
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password" className="text-slate-300">
-              Confirm New Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="confirm-password"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm new password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className={`bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pr-10 ${
-                  errors.confirmPassword ? "border-red-500" : ""
-                }`}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password" className="text-slate-300">
+                  Confirm New Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className={`bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pr-10 ${
+                      errors.confirmPassword ? "border-red-500" : ""
+                    }`}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                {errors.confirmPassword && <p className="text-red-400 text-sm">{errors.confirmPassword}</p>}
+              </div>
+
               <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                onClick={handleUpdatePassword}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
               >
-                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {isLoading ? "Updating password..." : "Update Password"}
               </Button>
-            </div>
-            {errors.confirmPassword && <p className="text-red-400 text-sm">{errors.confirmPassword}</p>}
-          </div>
-
-          <Button
-            onClick={handleResetPassword}
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-          >
-            {isLoading ? "Updating password..." : "Update Password"}
-          </Button>
+            </>
+          )}
 
           <div className="text-center">
-            <Link 
-              href="/"
-              className="inline-flex items-center text-sm text-blue-400 hover:text-blue-300"
-            >
+            <Link href="/" className="inline-flex items-center text-sm text-blue-400 hover:text-blue-300">
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to login
             </Link>

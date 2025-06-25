@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Eye, EyeOff, Copy, Share, MoreHorizontal, AlertTriangle, Edit, Trash } from "lucide-react"
+import { Eye, EyeOff, Copy, Share, MoreHorizontal, AlertTriangle, Edit, Trash, CopyCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +16,8 @@ import { PasswordDetailsModal } from "@/components/password-details-modal"
 import { SharePasswordModal } from "./share-password-modal"
 import { supabase } from "@/lib/supabase"
 import { decrypt } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useRouter } from 'next/navigation'
 
 interface PasswordEntry {
   id: string
@@ -26,6 +28,7 @@ interface PasswordEntry {
   updated_at: string
   is_expired: boolean
   url: string
+  isDuplicate?: boolean
 }
 
 interface PasswordCardProps {
@@ -43,6 +46,7 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [entryToShare, setEntryToShare] = useState<PasswordEntry | null>(null)
+  const router = useRouter();
 
   // console.log("Entry : ", entry);
   // console.log("PasswordCard received user :", user);
@@ -173,7 +177,23 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
     }
   };
 
-  const openShareModal = (entry: PasswordEntry) => {
+  const openShareModal = async (entry: PasswordEntry) => {
+    const { data: mailerConfig, error } = await supabase
+      .from('mailer_configuration')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (error || !mailerConfig) {
+      toast.error("Please configure your mailer settings in your profile before sharing.", {
+        action: {
+          label: 'Go to Profile',
+          onClick: () => router.push('/dashboard/profile'),
+        },
+      })
+      return;
+    }
+
     setEntryToShare(entry);
     setShareModalOpen(true);
   };
@@ -187,7 +207,30 @@ export function PasswordCard({ entry, user, onEdit = () => {}, onDelete = () => 
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-1">
               <h3 className="font-semibold text-slate-900 dark:text-slate-100">{entry.title}</h3>
-              {entry.is_expired && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+              {entry.is_expired && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Password Expired</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {entry.isDuplicate && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <CopyCheck className="w-4 h-4 text-red-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Duplicate Password</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{entry.username}</p>
           </div>
